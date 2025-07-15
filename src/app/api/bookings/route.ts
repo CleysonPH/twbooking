@@ -10,7 +10,95 @@ import {
   sendBookingNotificationToProvider
 } from '@/lib/email-service'
 import { prisma } from '@/lib/prisma'
+import { auth } from '../../../../auth'
 import { z } from 'zod'
+
+// Schema para validação dos filtros de agendamentos
+const appointmentFiltersSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
+})
+
+export async function GET(request: NextRequest) {
+  try {
+    // Verificar autenticação
+    const session = await auth()
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    // Buscar o prestador
+    const provider = await prisma.provider.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!provider) {
+      return NextResponse.json({ error: 'Prestador não encontrado' }, { status: 404 })
+    }
+
+    // Validar filtros da query string
+    const { searchParams } = new URL(request.url)
+    const filters = appointmentFiltersSchema.parse({
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+      status: searchParams.get('status') || undefined,
+    })
+
+    // Construir filtros para a query
+    const whereClause: { 
+      providerId: string
+      dateTime?: { gte?: Date; lte?: Date }
+      status?: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+    } = {
+      providerId: provider.id
+    }
+
+    if (filters.startDate || filters.endDate) {
+      whereClause.dateTime = {}
+      if (filters.startDate) {
+        whereClause.dateTime.gte = new Date(filters.startDate)
+      }
+      if (filters.endDate) {
+        const endDate = new Date(filters.endDate)
+        endDate.setHours(23, 59, 59, 999) // Incluir o dia inteiro
+        whereClause.dateTime.lte = endDate
+      }
+    }
+
+    if (filters.status) {
+      whereClause.status = filters.status as 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+    }
+
+    // Buscar agendamentos
+    const appointments = await prisma.booking.findMany({
+      where: whereClause,
+      orderBy: { dateTime: 'desc' },
+      select: {
+        id: true,
+        dateTime: true,
+        status: true,
+        customerNameSnapshot: true,
+        customerEmailSnapshot: true,
+        serviceNameSnapshot: true,
+        servicePriceSnapshot: true,
+        serviceDescriptionSnapshot: true,
+        addressSnapshot: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
+
+    return NextResponse.json(appointments)
+  } catch (error) {
+    console.error('Erro ao buscar agendamentos:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
