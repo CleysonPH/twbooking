@@ -44,12 +44,6 @@ const MONTH_NAMES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ]
 
-interface Availability {
-  weekday: string
-  startTime: string
-  endTime: string
-}
-
 export function AppointmentForm({ 
   providerId, 
   serviceId, 

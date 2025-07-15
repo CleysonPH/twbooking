@@ -59,7 +59,6 @@ export function CreateAppointmentModal({
   const [customerData, setCustomerData] = useState<CustomerData>({ name: '', email: '', phone: '' })
   const [availability, setAvailability] = useState<Array<{weekday: string, startTime: string, endTime: string}>>([])
   const [isCreating, setIsCreating] = useState(false)
-  const [loadingAvailability, setLoadingAvailability] = useState(true)
 
   const steps: { id: Step; title: string; description: string }[] = [
     { id: 'service', title: 'Serviço', description: 'Escolha o serviço' },
@@ -75,7 +74,6 @@ export function CreateAppointmentModal({
     if (isOpen && providerId) {
       const fetchAvailability = async () => {
         try {
-          setLoadingAvailability(true)
           const response = await fetch(`/api/availability/${providerId}`)
           
           if (!response.ok) {
@@ -87,8 +85,6 @@ export function CreateAppointmentModal({
         } catch (error) {
           console.error('Erro ao buscar disponibilidade:', error)
           setAvailability([])
-        } finally {
-          setLoadingAvailability(false)
         }
       }
 

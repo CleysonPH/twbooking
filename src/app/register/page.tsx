@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FormField } from "@/components/ui/form-field"
 import { Button } from "@/components/ui/button"
 import { registerSchema, type RegisterFormData } from "@/lib/validations"
-import { handleApiErrors, type ApiErrorResponse } from "@/lib/form-utils"
+import { handleApiErrors } from "@/lib/form-utils"
 
 export default function RegisterPage() {
   const router = useRouter()
