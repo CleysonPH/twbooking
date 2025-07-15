@@ -4,6 +4,7 @@ import LogoutButton from "./logout-button"
 import { DashboardNav } from "./components/dashboard-nav"
 import { StatsCards } from "./components/stats-cards"
 import { RevenueChart } from "./components/revenue-chart"
+import { PublicLinkCard } from "./components/public-link-card"
 import { getDashboardStats, getRevenueChartData } from "@/lib/dashboard-stats"
 
 export default async function DashboardPage() {
@@ -35,6 +36,11 @@ export default async function DashboardPage() {
         {/* Navigation */}
         <div className="mb-8">
           <DashboardNav />
+        </div>
+
+        {/* Public Link Card */}
+        <div className="mb-8">
+          <PublicLinkCard customLink={stats.customLink} />
         </div>
 
         {/* Statistics Cards */}

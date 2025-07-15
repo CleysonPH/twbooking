@@ -2,6 +2,14 @@ import { prisma } from "./prisma"
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, subDays, format } from "date-fns"
 import { DashboardStats, ChartDataPoint, RevenueChartData } from "./dashboard-types"
 
+async function getProviderFromUserId(userId: string): Promise<{ id: string; customLink: string } | null> {
+  const provider = await prisma.provider.findUnique({
+    where: { userId },
+    select: { id: true, customLink: true }
+  })
+  return provider
+}
+
 async function getProviderIdFromUserId(userId: string): Promise<string | null> {
   const provider = await prisma.provider.findUnique({
     where: { userId },
@@ -88,6 +96,18 @@ export async function getActiveServicesCount(userId: string): Promise<number> {
 }
 
 export async function getDashboardStats(userId: string): Promise<DashboardStats> {
+  const provider = await getProviderFromUserId(userId)
+  
+  if (!provider) {
+    return {
+      todayAppointments: 0,
+      upcomingAppointments: 0,
+      monthlyRevenue: 0,
+      activeServices: 0,
+      customLink: ''
+    }
+  }
+
   const [todayAppointments, upcomingAppointments, monthlyRevenue, activeServices] = await Promise.all([
     getTodayAppointments(userId),
     getUpcomingAppointments(userId),
@@ -99,7 +119,8 @@ export async function getDashboardStats(userId: string): Promise<DashboardStats>
     todayAppointments,
     upcomingAppointments,
     monthlyRevenue,
-    activeServices
+    activeServices,
+    customLink: provider.customLink
   }
 }
 

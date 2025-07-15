@@ -3,6 +3,7 @@ export interface DashboardStats {
   upcomingAppointments: number
   monthlyRevenue: number
   activeServices: number
+  customLink: string
 }
 
 export interface ChartDataPoint {
