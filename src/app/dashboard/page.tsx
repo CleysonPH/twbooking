@@ -1,6 +1,7 @@
 import { auth } from "@/../auth"
 import { redirect } from "next/navigation"
 import LogoutButton from "./logout-button"
+import { DashboardNav } from "./components/dashboard-nav"
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -20,6 +21,11 @@ export default async function DashboardPage() {
             </p>
           </div>
           <LogoutButton />
+        </div>
+
+        {/* Navigation */}
+        <div className="mb-8">
+          <DashboardNav />
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

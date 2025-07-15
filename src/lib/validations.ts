@@ -90,3 +90,17 @@ export const resetPasswordSchema = z.object({
 )
 
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
+
+// Schema para detalhes de serviço (apenas leitura)
+export const serviceDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+  duration: z.number(),
+  description: z.string().optional(),
+  isActive: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date()
+})
+
+export type ServiceDetail = z.infer<typeof serviceDetailSchema>
