@@ -2,13 +2,22 @@ import { auth } from "@/../auth"
 import { redirect } from "next/navigation"
 import LogoutButton from "./logout-button"
 import { DashboardNav } from "./components/dashboard-nav"
+import { StatsCards } from "./components/stats-cards"
+import { RevenueChart } from "./components/revenue-chart"
+import { getDashboardStats, getRevenueChartData } from "@/lib/dashboard-stats"
 
 export default async function DashboardPage() {
   const session = await auth()
 
-  if (!session) {
+  if (!session?.user?.id) {
     redirect("/login")
   }
+
+  // Buscar dados do dashboard
+  const [stats, chartData] = await Promise.all([
+    getDashboardStats(session.user.id),
+    getRevenueChartData(session.user.id, 7)
+  ])
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,41 +37,14 @@ export default async function DashboardPage() {
           <DashboardNav />
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-            <h3 className="font-semibold text-lg mb-2">Agendamentos Hoje</h3>
-            <p className="text-3xl font-bold text-primary">0</p>
-            <p className="text-sm text-muted-foreground">Nenhum agendamento para hoje</p>
-          </div>
-
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-            <h3 className="font-semibold text-lg mb-2">Próximos Agendamentos</h3>
-            <p className="text-3xl font-bold text-primary">0</p>
-            <p className="text-sm text-muted-foreground">Nenhum agendamento próximo</p>
-          </div>
-
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-            <h3 className="font-semibold text-lg mb-2">Faturamento do Mês</h3>
-            <p className="text-3xl font-bold text-primary">R$ 0,00</p>
-            <p className="text-sm text-muted-foreground">Nenhum faturamento registrado</p>
-          </div>
+        {/* Statistics Cards */}
+        <div className="mb-8">
+          <StatsCards stats={stats} />
         </div>
 
-        <div className="mt-8 rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4">Dashboard em Desenvolvimento</h2>
-          <p className="text-muted-foreground">
-            Esta é uma versão placeholder do dashboard. As funcionalidades completas 
-            serão implementadas nas próximas iterações do projeto.
-          </p>
-          
-          <div className="mt-4 p-4 bg-muted rounded-md">
-            <h4 className="font-medium mb-2">Informações da Sessão:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li><strong>ID:</strong> {session.user?.id}</li>
-              <li><strong>Email:</strong> {session.user?.email}</li>
-              <li><strong>Nome:</strong> {session.user?.name || "Não informado"}</li>
-            </ul>
-          </div>
+        {/* Revenue Chart */}
+        <div className="mb-8">
+          <RevenueChart initialData={chartData} />
         </div>
       </div>
     </div>
