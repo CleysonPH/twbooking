@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { registerSchema } from '@/lib/validations'
+import { registerApiSchema } from '@/lib/validations'
 import { ZodError } from 'zod'
 
 // Função para gerar customLink único
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     
     // Validar dados com Zod
-    const validatedData = registerSchema.parse(body)
+    const validatedData = registerApiSchema.parse(body)
     const { name, businessName, email, password, phone, address } = validatedData
 
     // Verificar se o email já existe
