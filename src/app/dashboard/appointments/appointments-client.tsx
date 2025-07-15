@@ -6,19 +6,22 @@ import { Button } from '@/components/ui/button'
 import { AppointmentWithDetails, AppointmentFilters } from '@/lib/appointment-types'
 import { AppointmentCard } from './components/appointment-card'
 import { AppointmentFiltersComponent } from './components/appointment-filters'
+import { CreateAppointmentModal } from './components/create-appointment-modal'
 import { DashboardNav } from '../components/dashboard-nav'
 import LogoutButton from '../logout-button'
 import { Plus } from 'lucide-react'
 
 interface AppointmentsClientProps {
   providerName: string
+  providerId: string
 }
 
-export function AppointmentsClient({ providerName }: AppointmentsClientProps) {
+export function AppointmentsClient({ providerName, providerId }: AppointmentsClientProps) {
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentFilters, setCurrentFilters] = useState<AppointmentFilters>({})
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const fetchAppointments = async (filters: AppointmentFilters = {}) => {
     setIsLoading(true)
@@ -106,7 +109,7 @@ export function AppointmentsClient({ providerName }: AppointmentsClientProps) {
 
           <div className="flex justify-between items-center mb-6">
             <div></div>
-            <Button disabled>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Agendamento
             </Button>
@@ -141,7 +144,7 @@ export function AppointmentsClient({ providerName }: AppointmentsClientProps) {
 
           <div className="flex justify-between items-center mb-6">
             <div></div>
-            <Button disabled>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Agendamento
             </Button>
@@ -178,7 +181,7 @@ export function AppointmentsClient({ providerName }: AppointmentsClientProps) {
 
         {/* Add Appointment Button */}
         <div className="mb-6 flex justify-end">
-          <Button disabled title="Funcionalidade em desenvolvimento">
+          <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento
           </Button>
@@ -213,6 +216,17 @@ export function AppointmentsClient({ providerName }: AppointmentsClientProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de Criação de Agendamento */}
+      <CreateAppointmentModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          setIsCreateModalOpen(false)
+          fetchAppointments(currentFilters) // Recarregar lista
+        }}
+        providerId={providerId}
+      />
     </div>
   )
 }

@@ -22,6 +22,7 @@ export default async function AppointmentsPage() {
   return (
     <AppointmentsClient 
       providerName={provider.name}
+      providerId={provider.id}
     />
   )
 }

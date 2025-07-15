@@ -258,3 +258,32 @@ export const availableSlotsSchema = z.object({
 })
 
 export type AvailableSlotsParams = z.infer<typeof availableSlotsSchema>
+
+// Schema para agendamento criado pelo prestador
+export const providerBookingSchema = z.object({
+  serviceId: z.string().min(1, "ID do serviço é obrigatório"),
+  customerId: z.string().optional(), // Se cliente já existe
+  customerData: z.object({
+    name: z
+      .string()
+      .min(2, "Nome deve ter pelo menos 2 caracteres")
+      .max(100, "Nome deve ter no máximo 100 caracteres")
+      .trim(),
+    email: z
+      .email("E-mail inválido")
+      .max(255, "E-mail deve ter no máximo 255 caracteres")
+      .trim()
+      .toLowerCase(),
+    phone: z
+      .string()
+      .min(10, "Telefone deve ter pelo menos 10 dígitos")
+      .max(15, "Telefone deve ter no máximo 15 dígitos")
+      .regex(/^[\d\s\(\)\-\+]+$/, "Formato de telefone inválido")
+      .trim(),
+  }).optional(),
+  selectedDate: z.string().min(1, "Data é obrigatória"),
+  selectedTime: z.string().min(1, "Horário é obrigatório"),
+  createdBy: z.literal('provider')
+})
+
+export type ProviderBookingData = z.infer<typeof providerBookingSchema>

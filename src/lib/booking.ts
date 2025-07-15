@@ -212,6 +212,7 @@ export async function createBooking(data: {
   serviceName: string
   servicePrice: number
   serviceDescription?: string | null
+  createdBy?: 'customer' | 'provider'
 }) {
   return await prisma.booking.create({
     data: {
@@ -220,7 +221,7 @@ export async function createBooking(data: {
       customerId: data.customerId,
       dateTime: data.dateTime,
       status: 'SCHEDULED',
-      createdBy: 'customer',
+      createdBy: data.createdBy || 'customer',
       // Snapshots para histórico
       addressSnapshot: data.providerAddress,
       serviceNameSnapshot: data.serviceName,

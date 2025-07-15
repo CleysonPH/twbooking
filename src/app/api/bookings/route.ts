@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { customerBookingSchema } from '@/lib/validations'
+import { customerBookingSchema, providerBookingSchema } from '@/lib/validations'
 import { 
   findOrCreateCustomer, 
   createBooking, 
@@ -104,6 +104,159 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
+    // Verificar se é um agendamento criado pelo prestador
+    const isProviderBooking = body.createdBy === 'provider'
+    
+    if (isProviderBooking) {
+      // Verificar autenticação do prestador
+      const session = await auth()
+      if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      }
+
+      // Buscar o prestador
+      const provider = await prisma.provider.findUnique({
+        where: { email: session.user.email },
+        select: { 
+          id: true,
+          name: true,
+          businessName: true,
+          address: true,
+          phone: true,
+          email: true
+        }
+      })
+
+      if (!provider) {
+        return NextResponse.json({ error: 'Prestador não encontrado' }, { status: 404 })
+      }
+
+      // Validar dados de entrada para prestador
+      const validatedData = providerBookingSchema.parse(body)
+      
+      // Converter data e hora para objeto Date
+      const [year, month, day] = validatedData.selectedDate.split('-').map(Number)
+      const [hours, minutes] = validatedData.selectedTime.split(':').map(Number)
+      
+      const appointmentDateTime = new Date(year, month - 1, day, hours, minutes)
+      
+      // Verificar se a data/hora não é no passado
+      if (appointmentDateTime <= new Date()) {
+        return NextResponse.json(
+          { error: 'Não é possível agendar para datas passadas' },
+          { status: 400 }
+        )
+      }
+
+      // Buscar informações do serviço
+      const service = await prisma.service.findUnique({
+        where: { 
+          id: validatedData.serviceId,
+          providerId: provider.id // Garantir que o serviço pertence ao prestador
+        }
+      })
+
+      if (!service) {
+        return NextResponse.json(
+          { error: 'Serviço não encontrado ou não pertence a você' },
+          { status: 404 }
+        )
+      }
+
+      if (!service.isActive) {
+        return NextResponse.json(
+          { error: 'Serviço não está ativo' },
+          { status: 400 }
+        )
+      }
+
+      // Verificar se o horário ainda está disponível
+      const isAvailable = await isTimeSlotAvailable(
+        provider.id,
+        validatedData.serviceId,
+        appointmentDateTime
+      )
+
+      if (!isAvailable) {
+        return NextResponse.json(
+          { error: 'Horário não está mais disponível. Por favor, escolha outro horário.' },
+          { status: 409 }
+        )
+      }
+
+      let customer
+      
+      // Se foi fornecido customerId, buscar cliente existente
+      if (validatedData.customerId) {
+        customer = await prisma.customer.findUnique({
+          where: { id: validatedData.customerId }
+        })
+        
+        if (!customer) {
+          return NextResponse.json(
+            { error: 'Cliente não encontrado' },
+            { status: 404 }
+          )
+        }
+      } else if (validatedData.customerData) {
+        // Encontrar ou criar cliente com os dados fornecidos
+        customer = await findOrCreateCustomer(
+          validatedData.customerData.name,
+          validatedData.customerData.email,
+          validatedData.customerData.phone
+        )
+      } else {
+        return NextResponse.json(
+          { error: 'Dados do cliente são obrigatórios' },
+          { status: 400 }
+        )
+      }
+
+      // Criar agendamento
+      const booking = await createBooking({
+        providerId: provider.id,
+        serviceId: service.id,
+        customerId: customer.id,
+        dateTime: appointmentDateTime,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        providerAddress: provider.address,
+        serviceName: service.name,
+        servicePrice: service.price,
+        serviceDescription: service.description,
+        createdBy: 'provider'
+      })
+
+      // Enviar e-mails de confirmação (em background)
+      try {
+        await Promise.all([
+          sendBookingConfirmationToCustomer(booking),
+          sendBookingNotificationToProvider(booking)
+        ])
+      } catch (emailError) {
+        console.error('Erro ao enviar e-mails de confirmação:', emailError)
+        // Não falha a criação do agendamento se houver erro no e-mail
+      }
+
+      // Retornar dados do agendamento criado
+      return NextResponse.json({
+        bookingId: booking.id,
+        message: 'Agendamento criado com sucesso!',
+        booking: {
+          id: booking.id,
+          dateTime: booking.dateTime,
+          status: booking.status,
+          customerNameSnapshot: booking.customerNameSnapshot,
+          customerEmailSnapshot: booking.customerEmailSnapshot,
+          serviceNameSnapshot: booking.serviceNameSnapshot,
+          servicePriceSnapshot: booking.servicePriceSnapshot,
+          serviceDescriptionSnapshot: booking.serviceDescriptionSnapshot,
+          addressSnapshot: booking.addressSnapshot,
+        }
+      }, { status: 201 })
+    }
+    
+    // Agendamento público (cliente) - código existente
     // Validar dados de entrada
     const validatedData = customerBookingSchema.parse(body)
     
