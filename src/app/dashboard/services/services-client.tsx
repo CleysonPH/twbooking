@@ -4,9 +4,11 @@ import { useState } from "react"
 import { DashboardNav } from "../components/dashboard-nav"
 import { ServiceCard } from "../components/service-card"
 import { ServiceDetailModal } from "../components/service-detail-modal"
+import { CreateServiceModal } from "./components/create-service-modal"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import LogoutButton from "../logout-button"
+import { toast } from "sonner"
 
 interface Service {
   id: string
@@ -24,18 +26,42 @@ interface ServicesPageClientProps {
   providerName: string
 }
 
-export default function ServicesPageClient({ services, providerName }: ServicesPageClientProps) {
+export default function ServicesPageClient({ services: initialServices, providerName }: ServicesPageClientProps) {
+  const [services, setServices] = useState(initialServices)
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const handleCardClick = (serviceId: string) => {
     setSelectedServiceId(serviceId)
-    setIsModalOpen(true)
+    setIsDetailModalOpen(true)
   }
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false)
     setSelectedServiceId(null)
+  }
+
+  const handleCreateService = () => {
+    setIsCreateModalOpen(true)
+  }
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalOpen(false)
+  }
+
+  const handleServiceCreated = async () => {
+    try {
+      // Recarregar os serviços após criar um novo
+      const response = await fetch('/api/services')
+      if (response.ok) {
+        const newServices = await response.json()
+        setServices(newServices)
+      }
+    } catch (error) {
+      console.error('Erro ao recarregar serviços:', error)
+      toast.error('Erro ao atualizar lista de serviços')
+    }
   }
 
   return (
@@ -59,7 +85,7 @@ export default function ServicesPageClient({ services, providerName }: ServicesP
 
         {/* Add Service Button */}
         <div className="mb-6">
-          <Button disabled className="flex items-center gap-2">
+          <Button onClick={handleCreateService} className="flex items-center gap-2">
             <Plus size={16} />
             Adicionar Novo Serviço
           </Button>
@@ -76,7 +102,7 @@ export default function ServicesPageClient({ services, providerName }: ServicesP
               <p className="text-muted-foreground mb-4">
                 Você ainda não possui serviços cadastrados. Comece criando seu primeiro serviço.
               </p>
-              <Button disabled>
+              <Button onClick={handleCreateService}>
                 <Plus size={16} className="mr-2" />
                 Criar Primeiro Serviço
               </Button>
@@ -97,8 +123,15 @@ export default function ServicesPageClient({ services, providerName }: ServicesP
         {/* Service Detail Modal */}
         <ServiceDetailModal
           serviceId={selectedServiceId}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetailModal}
+        />
+
+        {/* Create Service Modal */}
+        <CreateServiceModal
+          isOpen={isCreateModalOpen}
+          onClose={handleCloseCreateModal}
+          onSuccess={handleServiceCreated}
         />
       </div>
     </div>
