@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Clock, DollarSign, MapPin, Phone } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, DollarSign, MapPin, Phone, Calendar } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface ServiceDetailModalProps {
   isOpen: boolean
@@ -16,6 +18,7 @@ interface ServiceDetailModalProps {
     businessName: string
     address: string
     phone: string
+    customLink: string
   }
 }
 
@@ -25,6 +28,8 @@ export function ServiceDetailModal({
   service, 
   provider 
 }: ServiceDetailModalProps) {
+  const router = useRouter()
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -45,6 +50,11 @@ export function ServiceDetailModal({
     // Remove caracteres não numéricos
     const cleanPhone = phone.replace(/\D/g, '')
     return `https://wa.me/${cleanPhone}`
+  }
+
+  const handleScheduleAppointment = () => {
+    onClose()
+    router.push(`/booking/${provider.customLink}/appointment/${service.id}`)
   }
 
   return (
@@ -108,10 +118,14 @@ export function ServiceDetailModal({
           </div>
 
           {/* Call to Action */}
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              Em breve você poderá agendar este serviço diretamente por aqui!
-            </p>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <Button 
+              onClick={handleScheduleAppointment}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Agendar Serviço
+            </Button>
           </div>
         </div>
       </DialogContent>
