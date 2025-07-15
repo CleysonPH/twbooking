@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { registerSchema } from '@/lib/validations'
+import { ZodError } from 'zod'
 
 // Função para gerar customLink único
 function generateCustomLink(businessName: string): string {
@@ -35,24 +37,10 @@ async function ensureUniqueCustomLink(baseLink: string): Promise<string> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, businessName, email, password, phone, address } = body
-
-    // Validações básicas
-    if (!name || !businessName || !email || !password || !phone || !address) {
-      return NextResponse.json(
-        { error: 'Todos os campos são obrigatórios' },
-        { status: 400 }
-      )
-    }
-
-    // Validar formato do email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Formato de email inválido' },
-        { status: 400 }
-      )
-    }
+    
+    // Validar dados com Zod
+    const validatedData = registerSchema.parse(body)
+    const { name, businessName, email, password, phone, address } = validatedData
 
     // Verificar se o email já existe
     const existingProvider = await prisma.provider.findUnique({
@@ -108,6 +96,23 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Erro ao criar conta:', error)
+    
+    // Tratar erros de validação do Zod
+    if (error instanceof ZodError) {
+      const fieldErrors = error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message
+      }))
+      
+      return NextResponse.json(
+        { 
+          error: 'Dados inválidos', 
+          fieldErrors 
+        },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

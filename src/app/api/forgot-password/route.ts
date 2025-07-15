@@ -3,27 +3,15 @@ import { prisma } from '@/lib/prisma'
 import { checkRateLimit } from '@/lib/rate-limiter'
 import { generateSecureToken, getTokenExpiration } from '@/lib/password-utils'
 import { sendPasswordResetEmail } from '@/lib/email-service'
+import { forgotPasswordSchema } from '@/lib/validations'
+import { ZodError } from 'zod'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
-
-    // Validação básica do e-mail
-    if (!email || typeof email !== 'string') {
-      return NextResponse.json(
-        { error: 'E-mail é obrigatório' },
-        { status: 400 }
-      )
-    }
-
-    // Validação do formato do e-mail
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Formato de e-mail inválido' },
-        { status: 400 }
-      )
-    }
+    const body = await request.json()
+    
+    // Validar dados com Zod
+    const { email } = forgotPasswordSchema.parse(body)
 
     // Rate limiting - máximo 3 tentativas por hora por e-mail
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
@@ -38,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar se o e-mail existe na base de dados
     const provider = await prisma.provider.findUnique({
-      where: { email: email.toLowerCase().trim() }
+      where: { email }
     })
 
     // Por segurança, sempre retornamos sucesso (evita enumeration attack)
@@ -55,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Salvar token na base de dados
     await prisma.verificationToken.create({
       data: {
-        identifier: email.toLowerCase().trim(),
+        identifier: email,
         token,
         expires
       }
@@ -93,6 +81,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro na API forgot-password:', error)
+    
+    // Tratar erros de validação do Zod
+    if (error instanceof ZodError) {
+      const fieldErrors = error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message
+      }))
+      
+      return NextResponse.json(
+        { 
+          error: 'Dados inválidos', 
+          fieldErrors 
+        },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

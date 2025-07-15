@@ -1,42 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { validatePasswordStrength, hashPassword } from '@/lib/password-utils'
+import { hashPassword } from '@/lib/password-utils'
 import { sendPasswordChangedEmail } from '@/lib/email-service'
+import { resetPasswordSchema } from '@/lib/validations'
+import { ZodError } from 'zod'
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, password, confirmPassword } = await request.json()
-
-    // Validações básicas
-    if (!token || typeof token !== 'string') {
-      return NextResponse.json(
-        { error: 'Token é obrigatório' },
-        { status: 400 }
-      )
-    }
-
-    if (!password || typeof password !== 'string') {
-      return NextResponse.json(
-        { error: 'Senha é obrigatória' },
-        { status: 400 }
-      )
-    }
-
-    if (password !== confirmPassword) {
-      return NextResponse.json(
-        { error: 'As senhas não coincidem' },
-        { status: 400 }
-      )
-    }
-
-    // Validar força da senha
-    const passwordValidation = validatePasswordStrength(password)
-    if (!passwordValidation.isValid) {
-      return NextResponse.json(
-        { error: passwordValidation.errors[0] },
-        { status: 400 }
-      )
-    }
+    const body = await request.json()
+    
+    // Validar dados com Zod
+    const { token, password } = resetPasswordSchema.parse(body)
 
     // Verificar se o token existe e não expirou
     const verificationToken = await prisma.verificationToken.findUnique({
@@ -106,6 +80,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro na API reset-password:', error)
+    
+    // Tratar erros de validação do Zod
+    if (error instanceof ZodError) {
+      const fieldErrors = error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message
+      }))
+      
+      return NextResponse.json(
+        { 
+          error: 'Dados inválidos', 
+          fieldErrors 
+        },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

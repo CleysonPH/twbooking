@@ -2,63 +2,43 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormField } from '@/components/ui/form-field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations'
 
 function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    mode: "onBlur"
+  })
 
   useEffect(() => {
     if (!token) {
       toast.error('Token inválido')
       router.push('/forgot-password')
+    } else {
+      setValue('token', token)
     }
-  }, [token, router])
+  }, [token, router, setValue])
 
-  const validatePassword = (pwd: string) => {
-    const errors = []
-    if (pwd.length < 8) {
-      errors.push('A senha deve ter pelo menos 8 caracteres')
-    }
-    if (!/[a-zA-Z]/.test(pwd)) {
-      errors.push('A senha deve conter pelo menos uma letra')
-    }
-    if (!/\d/.test(pwd)) {
-      errors.push('A senha deve conter pelo menos um número')
-    }
-    return errors
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!password.trim()) {
-      toast.error('Por favor, insira a nova senha')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem')
-      return
-    }
-
-    const passwordErrors = validatePassword(password)
-    if (passwordErrors.length > 0) {
-      toast.error(passwordErrors[0])
-      return
-    }
-
+  const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true)
 
     try {
@@ -67,14 +47,10 @@ function ResetPasswordForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          token,
-          password,
-          confirmPassword,
-        }),
+        body: JSON.stringify(data),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (response.ok) {
         setIsSuccess(true)
@@ -85,9 +61,9 @@ function ResetPasswordForm() {
           router.push('/login')
         }, 3000)
       } else {
-        toast.error(data.error || 'Erro ao alterar senha')
+        toast.error(result.error || 'Erro ao alterar senha')
         
-        if (data.error?.includes('Token inválido') || data.error?.includes('expirado')) {
+        if (result.error?.includes('Token inválido') || result.error?.includes('expirado')) {
           setTimeout(() => {
             router.push('/forgot-password')
           }, 2000)
@@ -160,37 +136,29 @@ function ResetPasswordForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="password">Nova senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite sua nova senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500">
-                Mínimo 8 caracteres, incluindo letras e números
-              </p>
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              id="password"
+              label="Nova senha"
+              type="password"
+              placeholder="Digite sua nova senha"
+              error={errors.password?.message}
+              disabled={isLoading}
+              {...register("password")}
+            />
+            <p className="text-xs text-gray-500 -mt-2">
+              Mínimo 8 caracteres, incluindo letras e números
+            </p>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirme sua nova senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="w-full"
-              />
-            </div>
+            <FormField
+              id="confirmPassword"
+              label="Confirmar senha"
+              type="password"
+              placeholder="Confirme sua nova senha"
+              error={errors.confirmPassword?.message}
+              disabled={isLoading}
+              {...register("confirmPassword")}
+            />
 
             <Button
               type="submit"

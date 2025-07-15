@@ -2,25 +2,30 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { FormField } from '@/components/ui/form-field'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validations'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submittedEmail, setSubmittedEmail] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!email.trim()) {
-      toast.error('Por favor, insira seu e-mail')
-      return
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    mode: "onBlur"
+  })
 
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true)
 
     try {
@@ -29,16 +34,17 @@ export default function ForgotPasswordPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify(data),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (response.ok) {
+        setSubmittedEmail(data.email)
         setIsSubmitted(true)
         toast.success('Instruções enviadas! Verifique seu e-mail.')
       } else {
-        toast.error(data.error || 'Erro ao enviar instruções')
+        toast.error(result.error || 'Erro ao enviar instruções')
       }
     } catch (error) {
       console.error('Erro:', error)
@@ -46,6 +52,12 @@ export default function ForgotPasswordPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleTryAgain = () => {
+    setIsSubmitted(false)
+    setSubmittedEmail('')
+    reset()
   }
 
   if (isSubmitted) {
@@ -63,7 +75,7 @@ export default function ForgotPasswordPage() {
           <CardContent className="space-y-6">
             <div className="rounded-lg bg-green-50 border border-green-200 p-4">
               <p className="text-sm text-green-800">
-                Se o e-mail <strong>{email}</strong> estiver cadastrado em nosso sistema, 
+                Se o e-mail <strong>{submittedEmail}</strong> estiver cadastrado em nosso sistema, 
                 você receberá instruções para redefinir sua senha.
               </p>
             </div>
@@ -76,10 +88,7 @@ export default function ForgotPasswordPage() {
 
             <div className="space-y-4">
               <Button
-                onClick={() => {
-                  setIsSubmitted(false)
-                  setEmail('')
-                }}
+                onClick={handleTryAgain}
                 variant="outline"
                 className="w-full"
               >
@@ -110,20 +119,16 @@ export default function ForgotPasswordPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Digite seu e-mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                className="w-full"
-              />
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              id="email"
+              label="E-mail"
+              type="email"
+              placeholder="Digite seu e-mail"
+              error={errors.email?.message}
+              disabled={isLoading}
+              {...register("email")}
+            />
 
             <Button
               type="submit"

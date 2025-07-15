@@ -3,48 +3,35 @@
 import { useState } from "react"
 import { signIn, getSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { FormField } from "@/components/ui/form-field"
 import { toast } from "sonner"
 import Link from "next/link"
+import { loginSchema, type LoginFormData } from "@/lib/validations"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const validateForm = () => {
-    if (!email) {
-      toast.error("E-mail é obrigatório")
-      return false
-    }
-    if (!email.includes("@")) {
-      toast.error("Por favor, insira um e-mail válido")
-      return false
-    }
-    if (!password) {
-      toast.error("Senha é obrigatória")
-      return false
-    }
-    return true
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur"
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
-
+  const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
 
     try {
       const result = await signIn("credentials", {
-        email,
-        password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       })
 
@@ -77,32 +64,26 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              id="email"
+              label="E-mail"
+              type="email"
+              placeholder="seu@email.com"
+              error={errors.email?.message}
+              disabled={isLoading}
+              {...register("email")}
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
+            <FormField
+              id="password"
+              label="Senha"
+              type="password"
+              placeholder="Digite sua senha"
+              error={errors.password?.message}
+              disabled={isLoading}
+              {...register("password")}
+            />
 
             <Button 
               type="submit" 

@@ -2,109 +2,36 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { FormField } from "@/components/ui/form-field"
 import { Button } from "@/components/ui/button"
-
-interface FormData {
-  name: string
-  businessName: string
-  address: string
-  phone: string
-  email: string
-  password: string
-  confirmPassword: string
-}
+import { registerSchema, type RegisterFormData } from "@/lib/validations"
+import { handleApiErrors, type ApiErrorResponse } from "@/lib/form-utils"
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    businessName: "",
-    address: "",
-    phone: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  })
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    mode: "onBlur"
+  })
 
-  const validateForm = (): boolean => {
-    // Validar campos obrigatórios
-    if (!formData.name.trim()) {
-      toast.error("Nome é obrigatório")
-      return false
-    }
-    if (!formData.businessName.trim()) {
-      toast.error("Nome do negócio é obrigatório")
-      return false
-    }
-    if (!formData.address.trim()) {
-      toast.error("Endereço é obrigatório")
-      return false
-    }
-    if (!formData.phone.trim()) {
-      toast.error("Telefone é obrigatório")
-      return false
-    }
-    if (!formData.email.trim()) {
-      toast.error("Email é obrigatório")
-      return false
-    }
-    if (!formData.password) {
-      toast.error("Senha é obrigatória")
-      return false
-    }
-    if (!formData.confirmPassword) {
-      toast.error("Confirmação de senha é obrigatória")
-      return false
-    }
-
-    // Validar formato do email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Formato de email inválido")
-      return false
-    }
-
-    // Validar força da senha
-    if (formData.password.length < 6) {
-      toast.error("Senha deve ter pelo menos 6 caracteres")
-      return false
-    }
-
-    // Validar confirmação de senha
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Senhas não coincidem")
-      return false
-    }
-
-    return true
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
+  const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
 
     try {
       // Remover confirmPassword antes de enviar
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { confirmPassword, ...dataToSend } = formData
+      const { confirmPassword, ...dataToSend } = data
 
       const response = await fetch("/api/register", {
         method: "POST",
@@ -114,14 +41,15 @@ export default function RegisterPage() {
         body: JSON.stringify(dataToSend),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (!response.ok) {
-        toast.error(data.error || "Erro ao criar conta")
+        // Usar a função utilitária para lidar com erros
+        handleApiErrors<RegisterFormData>(result, setError)
         return
       }
 
-      toast.success(`Conta criada com sucesso! Seu link personalizado: ${data.customLink}`)
+      toast.success(`Conta criada com sucesso! Seu link personalizado: ${result.customLink}`)
       
       // Redirecionar para o login após 2 segundos
       setTimeout(() => {
@@ -146,97 +74,69 @@ export default function RegisterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Seu nome completo"
-                required
-              />
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              id="name"
+              label="Nome"
+              type="text"
+              placeholder="Seu nome completo"
+              error={errors.name?.message}
+              {...register("name")}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Nome do Negócio</Label>
-              <Input
-                id="businessName"
-                name="businessName"
-                type="text"
-                value={formData.businessName}
-                onChange={handleChange}
-                placeholder="Nome da sua empresa/negócio"
-                required
-              />
-            </div>
+            <FormField
+              id="businessName"
+              label="Nome do Negócio"
+              type="text"
+              placeholder="Nome da sua empresa/negócio"
+              error={errors.businessName?.message}
+              {...register("businessName")}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                name="address"
-                type="text"
-                value={formData.address}
-                onChange={handleChange}
-                placeholder="Endereço completo do seu negócio"
-                required
-              />
-            </div>
+            <FormField
+              id="address"
+              label="Endereço"
+              type="text"
+              placeholder="Endereço completo do seu negócio"
+              error={errors.address?.message}
+              {...register("address")}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="(11) 99999-9999"
-                required
-              />
-            </div>
+            <FormField
+              id="phone"
+              label="Telefone"
+              type="tel"
+              placeholder="(11) 99999-9999"
+              error={errors.phone?.message}
+              {...register("phone")}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="seu@email.com"
-                required
-              />
-            </div>
+            <FormField
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="seu@email.com"
+              error={errors.email?.message}
+              {...register("email")}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Mínimo 6 caracteres"
-                required
-              />
-            </div>
+            <FormField
+              id="password"
+              label="Senha"
+              type="password"
+              placeholder="Mínimo 8 caracteres"
+              error={errors.password?.message}
+              {...register("password")}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmação de Senha</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Digite a senha novamente"
-                required
-              />
-            </div>
+            <FormField
+              id="confirmPassword"
+              label="Confirmação de Senha"
+              type="password"
+              placeholder="Digite a senha novamente"
+              error={errors.confirmPassword?.message}
+              {...register("confirmPassword")}
+            />
 
             <Button 
               type="submit" 
