@@ -271,7 +271,10 @@ export function AppointmentForm({
           <div>
             <h3 className="text-lg font-semibold mb-2">Selecionar Horário</h3>
             <p className="text-sm text-muted-foreground">
-              Escolha um horário disponível para {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}.
+              Escolha um horário disponível para {(() => {
+                const [year, month, day] = selectedDate.split('-').map(Number)
+                return new Date(year, month - 1, day).toLocaleDateString('pt-BR')
+              })()}.
             </p>
           </div>
 

@@ -58,10 +58,14 @@ export async function GET(request: NextRequest) {
     if (filters.startDate || filters.endDate) {
       whereClause.dateTime = {}
       if (filters.startDate) {
-        whereClause.dateTime.gte = new Date(filters.startDate)
+        // Forçar timezone local para evitar problemas de fuso
+        const [year, month, day] = filters.startDate.split('-').map(Number)
+        whereClause.dateTime.gte = new Date(year, month - 1, day)
       }
       if (filters.endDate) {
-        const endDate = new Date(filters.endDate)
+        // Forçar timezone local para evitar problemas de fuso
+        const [year, month, day] = filters.endDate.split('-').map(Number)
+        const endDate = new Date(year, month - 1, day)
         endDate.setHours(23, 59, 59, 999) // Incluir o dia inteiro
         whereClause.dateTime.lte = endDate
       }

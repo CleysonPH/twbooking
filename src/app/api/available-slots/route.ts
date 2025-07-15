@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
 
     const validatedParams = availableSlotsSchema.parse(params)
     
-    // Converter string de data para objeto Date
-    const requestedDate = new Date(validatedParams.date)
+    // Converter string de data para objeto Date, forçando timezone local
+    // Para evitar problemas de fuso horário, vamos construir a data manualmente
+    const [year, month, day] = validatedParams.date.split('-').map(Number)
+    const requestedDate = new Date(year, month - 1, day) // month é 0-indexed
     
     // Verificar se a data é válida
     if (isNaN(requestedDate.getTime())) {
