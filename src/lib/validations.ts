@@ -287,3 +287,54 @@ export const providerBookingSchema = z.object({
 })
 
 export type ProviderBookingData = z.infer<typeof providerBookingSchema>
+
+// Schema para atualização de dados do provider
+export const providerUpdateSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Nome deve ter pelo menos 2 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres")
+    .trim(),
+  businessName: z
+    .string()
+    .min(2, "Nome do negócio deve ter pelo menos 2 caracteres")
+    .max(100, "Nome do negócio deve ter no máximo 100 caracteres")
+    .trim(),
+  phone: z
+    .string()
+    .min(10, "Telefone deve ter pelo menos 10 dígitos")
+    .max(15, "Telefone deve ter no máximo 15 dígitos")
+    .regex(/^[\d\s\(\)\-\+]+$/, "Formato de telefone inválido")
+    .trim(),
+  customLink: z
+    .string()
+    .min(3, "Link personalizado deve ter pelo menos 3 caracteres")
+    .max(50, "Link personalizado deve ter no máximo 50 caracteres")
+    .regex(/^[a-zA-Z0-9\-_]+$/, "Link personalizado deve conter apenas letras, números, hífen e underscore")
+    .trim()
+    .toLowerCase(),
+  address: z
+    .string()
+    .min(5, "Endereço deve ter pelo menos 5 caracteres")
+    .max(200, "Endereço deve ter no máximo 200 caracteres")
+    .trim()
+})
+
+export type ProviderUpdateFormData = z.infer<typeof providerUpdateSchema>
+
+// Schema para alteração de senha
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória"),
+  newPassword: z
+    .string()
+    .min(8, "Nova senha deve ter pelo menos 8 caracteres")
+    .max(100, "Nova senha deve ter no máximo 100 caracteres")
+    .regex(/[a-zA-Z]/, "Nova senha deve conter pelo menos uma letra")
+    .regex(/\d/, "Nova senha deve conter pelo menos um número"),
+  confirmNewPassword: z.string()
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmNewPassword"]
+})
+
+export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
