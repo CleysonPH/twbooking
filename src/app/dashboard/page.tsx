@@ -23,14 +23,16 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Dashboard</h1>
+            <p className="text-muted-foreground mt-2 break-words">
               Bem-vindo, {session.user?.name || session.user?.email}!
             </p>
           </div>
-          <LogoutButton />
+          <div className="shrink-0">
+            <LogoutButton />
+          </div>
         </div>
 
         {/* Navigation */}

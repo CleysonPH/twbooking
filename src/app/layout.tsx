@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TWBooking",
   description: "Agendamentos online simples para negócios locais",
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({

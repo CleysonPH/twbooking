@@ -161,14 +161,16 @@ export function AvailabilityClient({ providerName }: AvailabilityClientProps) {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
-          <div className="mb-8 flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Disponibilidade</h1>
-              <p className="text-muted-foreground mt-2">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Disponibilidade</h1>
+              <p className="text-muted-foreground mt-2 break-words">
                 Gerencie seus horários, {providerName}
               </p>
             </div>
-            <LogoutButton />
+            <div className="shrink-0">
+              <LogoutButton />
+            </div>
           </div>
 
           {/* Navigation */}
@@ -188,14 +190,16 @@ export function AvailabilityClient({ providerName }: AvailabilityClientProps) {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Disponibilidade</h1>
-            <p className="text-muted-foreground mt-2">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Disponibilidade</h1>
+            <p className="text-muted-foreground mt-2 break-words">
               Configure os dias e horários em que você está disponível para atendimento, {providerName}
             </p>
           </div>
-          <LogoutButton />
+          <div className="shrink-0">
+            <LogoutButton />
+          </div>
         </div>
 
         {/* Navigation */}

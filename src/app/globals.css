@@ -118,5 +118,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+  html {
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar for horizontal navigation */
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 4px;
+  }
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: theme(colors.muted.DEFAULT);
+    border-radius: 2px;
+  }
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: theme(colors.muted-foreground.DEFAULT);
   }
 }
