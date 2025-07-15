@@ -18,7 +18,7 @@
 - **Auth.js** (ex-NextAuth.js): Solução moderna, flexível e integrada ao Prisma para autenticação por e-mail/senha.
 
 ## 6. Envio de E-mails
-- **Nodemailer** com **Mailgun (SMTP)**: Flexibilidade, confiabilidade e controle total sobre templates e integrações.
+- **Nodemailer** com **Mailtrap (SMTP)**: Flexibilidade, confiabilidade e controle total sobre templates e integrações.
 
 ## 7. UI/Componentes
 - **shadcn/ui** + **Tailwind CSS**: Componentes React modernos, acessíveis e altamente customizáveis.

@@ -109,6 +109,7 @@ erDiagram
     Provider {
         string id PK
         string name
+        string businessName
         string email
         string password
         string phone
