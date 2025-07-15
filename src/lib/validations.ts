@@ -139,3 +139,45 @@ export const serviceCreateSchema = z.object({
 })
 
 export type ServiceCreateFormData = z.infer<typeof serviceCreateSchema>
+
+// Schema para atualização de serviço (baseado no schema de criação)
+export const serviceUpdateSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Nome deve ter pelo menos 2 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres")
+    .trim(),
+  price: z
+    .number({
+      message: "Preço é obrigatório"
+    })
+    .positive("Preço deve ser positivo")
+    .max(99999.99, "Preço deve ser menor que R$ 99.999,99"),
+  duration: z
+    .number({
+      message: "Duração é obrigatória"
+    })
+    .min(15, "Duração mínima é de 15 minutos")
+    .max(480, "Duração máxima é de 8 horas (480 minutos)")
+    .refine(
+      (value) => value % 15 === 0,
+      {
+        message: "Duração deve ser um múltiplo de 15 minutos"
+      }
+    ),
+  description: z
+    .string()
+    .max(500, "Descrição deve ter no máximo 500 caracteres")
+    .trim()
+    .optional()
+    .or(z.literal(""))
+})
+
+export type ServiceUpdateFormData = z.infer<typeof serviceUpdateSchema>
+
+// Schema para toggle de status do serviço
+export const serviceToggleStatusSchema = z.object({
+  isActive: z.boolean()
+})
+
+export type ServiceToggleStatusData = z.infer<typeof serviceToggleStatusSchema>

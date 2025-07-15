@@ -5,6 +5,7 @@ import { DashboardNav } from "../components/dashboard-nav"
 import { ServiceCard } from "../components/service-card"
 import { ServiceDetailModal } from "../components/service-detail-modal"
 import { CreateServiceModal } from "./components/create-service-modal"
+import { EditServiceModal } from "./components/edit-service-modal"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import LogoutButton from "../logout-button"
@@ -31,6 +32,8 @@ export default function ServicesPageClient({ services: initialServices, provider
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null)
 
   const handleCardClick = (serviceId: string) => {
     setSelectedServiceId(serviceId)
@@ -50,9 +53,48 @@ export default function ServicesPageClient({ services: initialServices, provider
     setIsCreateModalOpen(false)
   }
 
+  const handleEditService = () => {
+    // Encontrar o serviço selecionado
+    const service = services.find(s => s.id === selectedServiceId)
+    if (service) {
+      setServiceToEdit(service)
+      setIsEditModalOpen(true)
+      setIsDetailModalOpen(false) // Fechar modal de detalhes
+    }
+  }
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false)
+    setServiceToEdit(null)
+  }
+
+  const handleServiceUpdatedFromEdit = async () => {
+    // Atualizar lista de serviços
+    await handleServiceUpdated()
+    
+    // Reabrir modal de detalhes se havia um serviço selecionado
+    if (selectedServiceId) {
+      setIsDetailModalOpen(true)
+    }
+  }
+
   const handleServiceCreated = async () => {
     try {
       // Recarregar os serviços após criar um novo
+      const response = await fetch('/api/services')
+      if (response.ok) {
+        const newServices = await response.json()
+        setServices(newServices)
+      }
+    } catch (error) {
+      console.error('Erro ao recarregar serviços:', error)
+      toast.error('Erro ao atualizar lista de serviços')
+    }
+  }
+
+  const handleServiceUpdated = async () => {
+    try {
+      // Recarregar os serviços após atualizar um existente
       const response = await fetch('/api/services')
       if (response.ok) {
         const newServices = await response.json()
@@ -125,6 +167,8 @@ export default function ServicesPageClient({ services: initialServices, provider
           serviceId={selectedServiceId}
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetailModal}
+          onEdit={handleEditService}
+          onUpdate={handleServiceUpdated}
         />
 
         {/* Create Service Modal */}
@@ -132,6 +176,14 @@ export default function ServicesPageClient({ services: initialServices, provider
           isOpen={isCreateModalOpen}
           onClose={handleCloseCreateModal}
           onSuccess={handleServiceCreated}
+        />
+
+        {/* Edit Service Modal */}
+        <EditServiceModal
+          service={serviceToEdit}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSuccess={handleServiceUpdatedFromEdit}
         />
       </div>
     </div>

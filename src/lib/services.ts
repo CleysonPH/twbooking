@@ -1,5 +1,5 @@
 import { prisma } from "./prisma"
-import { ServiceCreateFormData } from "./validations"
+import { ServiceCreateFormData, ServiceUpdateFormData } from "./validations"
 
 export async function getProviderServices(providerId: string) {
   return await prisma.service.findMany({
@@ -24,5 +24,34 @@ export async function createService(data: ServiceCreateFormData, providerId: str
       providerId,
       description: data.description || null
     }
+  })
+}
+
+export async function updateService(serviceId: string, data: ServiceUpdateFormData, providerId: string) {
+  // Verificar se o serviço pertence ao provider
+  const existingService = await getServiceById(serviceId, providerId)
+  if (!existingService) {
+    throw new Error("Serviço não encontrado")
+  }
+
+  return await prisma.service.update({
+    where: { id: serviceId },
+    data: {
+      ...data,
+      description: data.description || null
+    }
+  })
+}
+
+export async function toggleServiceStatus(serviceId: string, isActive: boolean, providerId: string) {
+  // Verificar se o serviço pertence ao provider
+  const existingService = await getServiceById(serviceId, providerId)
+  if (!existingService) {
+    throw new Error("Serviço não encontrado")
+  }
+
+  return await prisma.service.update({
+    where: { id: serviceId },
+    data: { isActive }
   })
 }

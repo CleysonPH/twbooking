@@ -17,6 +17,8 @@ interface ServiceDetailModalProps {
   serviceId: string | null
   isOpen: boolean
   onClose: () => void
+  onEdit?: () => void
+  onUpdate?: () => void
 }
 
 interface ServiceDetail {
@@ -30,10 +32,11 @@ interface ServiceDetail {
   updatedAt: Date
 }
 
-export function ServiceDetailModal({ serviceId, isOpen, onClose }: ServiceDetailModalProps) {
+export function ServiceDetailModal({ serviceId, isOpen, onClose, onEdit, onUpdate }: ServiceDetailModalProps) {
   const [service, setService] = useState<ServiceDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [toggleLoading, setToggleLoading] = useState(false)
 
   useEffect(() => {
     if (serviceId && isOpen) {
@@ -88,6 +91,48 @@ export function ServiceDetailModal({ serviceId, isOpen, onClose }: ServiceDetail
       hour: "2-digit",
       minute: "2-digit"
     }).format(date)
+  }
+
+  const handleToggleStatus = async () => {
+    if (!service) return
+    
+    setToggleLoading(true)
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isActive: !service.isActive }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao alterar status do serviço')
+      }
+
+      const updatedService = await response.json()
+      setService({
+        ...updatedService,
+        createdAt: new Date(updatedService.createdAt),
+        updatedAt: new Date(updatedService.updatedAt)
+      })
+
+      // Chamar onUpdate para atualizar a lista de serviços
+      if (onUpdate) {
+        onUpdate()
+      }
+    } catch (error) {
+      console.error('Error toggling service status:', error)
+      setError('Erro ao alterar status do serviço')
+    } finally {
+      setToggleLoading(false)
+    }
+  }
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit()
+    }
   }
 
   if (!isOpen) return null
@@ -160,11 +205,15 @@ export function ServiceDetailModal({ serviceId, isOpen, onClose }: ServiceDetail
               <Switch
                 id="service-active"
                 checked={service.isActive}
-                disabled // Placeholder - não funcional ainda
+                onCheckedChange={handleToggleStatus}
+                disabled={toggleLoading}
               />
               <Label htmlFor="service-active">
                 Serviço {service.isActive ? "ativo" : "inativo"}
               </Label>
+              {toggleLoading && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary ml-2"></div>
+              )}
             </div>
 
             {/* Datas */}
@@ -181,7 +230,7 @@ export function ServiceDetailModal({ serviceId, isOpen, onClose }: ServiceDetail
 
             {/* Ações */}
             <div className="flex gap-2 pt-4">
-              <Button className="flex-1" disabled>
+              <Button className="flex-1" onClick={handleEdit}>
                 <Edit size={16} className="mr-2" />
                 Editar Serviço
               </Button>
