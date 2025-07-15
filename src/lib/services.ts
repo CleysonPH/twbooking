@@ -55,3 +55,15 @@ export async function toggleServiceStatus(serviceId: string, isActive: boolean, 
     data: { isActive }
   })
 }
+
+export async function getProviderByCustomLink(customLink: string) {
+  return await prisma.provider.findUnique({
+    where: { customLink },
+    include: {
+      services: {
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' }
+      }
+    }
+  })
+}
