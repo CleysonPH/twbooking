@@ -60,21 +60,22 @@ model VerificationToken {
 }
 
 model Provider {
-  id           String         @id @default(cuid())
-  name         String
-  businessName String
-  email        String         @unique
-  password     String
-  phone        String
-  customLink   String         @unique
-  address      String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  userId       String         @unique
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  services     Service[]
-  bookings     Booking[]
-  availability Availability[]
+  id              String         @id @default(cuid())
+  name            String
+  businessName    String
+  email           String         @unique
+  password        String
+  phone           String
+  customLink      String         @unique
+  address         String
+  passwordResetAt DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String         @unique
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services        Service[]
+  bookings        Booking[]
+  availability    Availability[]
 }
 
 model Service {
