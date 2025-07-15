@@ -1,5 +1,21 @@
 import { z } from "zod"
 
+// Enum para dias da semana
+export const WeekdayEnum = z.enum([
+  'MONDAY',
+  'TUESDAY', 
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY'
+])
+
+// Schema de validação de horário (formato HH:MM)
+const timeSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato de horário inválido (use HH:MM)")
+
 // Schema para registro de usuário
 export const registerSchema = z.object({
   name: z
@@ -181,3 +197,30 @@ export const serviceToggleStatusSchema = z.object({
 })
 
 export type ServiceToggleStatusData = z.infer<typeof serviceToggleStatusSchema>
+
+// Schemas para disponibilidade do prestador
+export const availabilityCreateSchema = z.object({
+  weekday: WeekdayEnum,
+  startTime: timeSchema,
+  endTime: timeSchema
+}).refine(data => data.startTime < data.endTime, {
+  message: "Horário de início deve ser anterior ao horário de término",
+  path: ["endTime"]
+})
+
+export const availabilityUpdateSchema = availabilityCreateSchema
+
+export type AvailabilityFormData = z.infer<typeof availabilityCreateSchema>
+export type AvailabilityCreateData = z.infer<typeof availabilityCreateSchema>
+export type AvailabilityUpdateData = z.infer<typeof availabilityUpdateSchema>
+
+// Schema para disponibilidade de serviço
+export const serviceAvailabilitySchema = z.object({
+  weekday: WeekdayEnum,
+  startTime: timeSchema,
+  endTime: timeSchema
+}).refine(data => data.startTime < data.endTime, {
+  message: "Hora de início deve ser anterior à hora de término"
+})
+
+export type ServiceAvailabilityFormData = z.infer<typeof serviceAvailabilitySchema>

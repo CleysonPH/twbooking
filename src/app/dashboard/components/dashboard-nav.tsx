@@ -21,6 +21,11 @@ export function DashboardNav({ className }: DashboardNavProps) {
       href: "/dashboard/services",
       label: "Serviços",
       isActive: pathname === "/dashboard/services"
+    },
+    {
+      href: "/dashboard/availability",
+      label: "Disponibilidade",
+      isActive: pathname === "/dashboard/availability"
     }
   ]
 
